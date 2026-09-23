@@ -315,7 +315,7 @@ class TracksideConnector():
     def race_stop(self, arg=None):
         # Save immediately so the race is queryable right away, not just once the next race stages.
         self._rhapi.race.stop()
-        if self._lean_mode():
+        if not self._lean_mode():
             # Lean mode never persists a race
             self._rhapi.race.save()
 

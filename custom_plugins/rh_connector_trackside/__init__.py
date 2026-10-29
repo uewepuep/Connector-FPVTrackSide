@@ -179,6 +179,12 @@ class TracksideConnector():
             else:
                 self._rhapi.race.save()
 
+        # stop() on an idle race leaves RH in DONE, and save() ignores a race with no
+        # start time, so nothing above returns it to READY. RH refuses heat changes
+        # unless READY, which would silently stage the previous heat instead.
+        if self._rhapi.race.status != RaceStatus.READY and not self._rhapi.race.any_laps_recorded:
+            self._rhapi.race.clear()
+
         if arg.get('p'):
             ts_pilot_callsigns = arg.get('p')
             ts_pilot_ids = arg.get('p_id')
@@ -313,6 +319,10 @@ class TracksideConnector():
             self._rhapi.ui.socket_broadcast('ts_lap_data', payload)
 
     def race_stop(self, arg=None):
+        # Nothing to stop. RH's stop() would move an idle race from READY to DONE.
+        if self._rhapi.race.status == RaceStatus.READY:
+            return
+
         # Save immediately so the race is queryable right away, not just once the next race stages.
         self._rhapi.race.stop()
         if not self._lean_mode():
